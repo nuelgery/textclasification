@@ -1,22 +1,39 @@
 from fastapi import FastAPI
+import mysql.connector
 
 app = FastAPI()
 
+# koneksi DB
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="spam_api"
+)
+
+cursor = db.cursor()
+
 @app.get("/")
 def home():
-    return {"message": "api masuk mas bro"}
+    return {"message": "API + MySQL jalan 🚀"}
 
-@app.post("/predict")
-def predict(data: dict):
+
+@app.post("/message")
+def save_message(data: dict):
     text = data.get("text")
-    
-    # dummy klasifikasi dulu
-    if "jalan" in text.lower():
-        kategori = "infrastruktur"
-    else:
-        kategori = "lainnya"
 
-    return {
-        "text": text,
-        "kategori": kategori
-    }
+    query = "INSERT INTO messages (text, prediction) VALUES (%s, %s)"
+    values = (text, "unknown")
+
+    cursor.execute(query, values)
+    db.commit()
+
+    return {"message": "data berhasil disimpan"}
+
+
+@app.get("/messages")
+def get_messages():
+    cursor.execute("SELECT * FROM messages")
+    result = cursor.fetchall()
+
+    return {"data": result}
